@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALL Fighter – Defeat Leukemia</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    #game-container canvas { display: block; }
+  </style>
+</head>
+<body>
+  <div id="game-container"></div>
+
+  <!-- Shared constants and utilities -->
+  <script src="constants.js"></script>
+
+  <!-- Wave configs — one file per wave, loaded in order -->
+  <script src="waves/wave1.js"></script>
+  <script src="waves/wave2.js"></script>
+  <script src="waves/wave3.js"></script>
+  <script src="waves/wave4.js"></script>
+  <script src="waves/wave5.js"></script>
+  <script src="waves/index.js"></script>
+
+  <!-- Phaser scenes -->
+  <script src="scenes/BootScene.js"></script>
+  <script src="scenes/MenuScene.js"></script>
+  <script src="scenes/GameScene.js"></script>
+  <script src="scenes/EndScene.js"></script>
+
+  <!-- Entry point — starts the Phaser game -->
+  <script src="game.js"></script>
+</body>
+</html>
