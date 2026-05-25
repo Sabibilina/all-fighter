@@ -1,5 +1,5 @@
 const WAVE_3 = {
-  healthyCount:  6,
+  healthyCount:  12,
   leukemicCount: 6,
   speed:         76,
 

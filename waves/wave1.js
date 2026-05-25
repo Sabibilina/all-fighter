@@ -1,5 +1,5 @@
 const WAVE_1 = {
-  healthyCount:  5,
+  healthyCount:  10,
   leukemicCount: 3,
   speed:         52,
 
@@ -15,5 +15,6 @@ const WAVE_1 = {
   description: 'Leukemic cells have invaded the bloodstream.\n' +
                'Click the jagged PURPLE cells to destroy them before they escape.\n' +
                'Do NOT click the round BLUE healthy cells — they protect the patient.',
-  detail:      null,
+  detail:      'Destroying leukemic cells damages nearby healthy cells — like real chemotherapy.\n' +
+               'A healthy cell dies after absorbing 2–3 nearby kills.',
 };

@@ -1,6 +1,6 @@
 const WAVE_5 = {
-  healthyCount:  7,
-  leukemicCount: 9,
+  healthyCount:  14,
+  leukemicCount: 8,
   speed:         100,
 
   splitting:  true,    // cells split on escape

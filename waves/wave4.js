@@ -1,7 +1,7 @@
 const WAVE_4 = {
   // ── Spawn config ───────────────────────────────────────────────────────────
-  healthyCount:  6,
-  leukemicCount: 8,
+  healthyCount:  13,
+  leukemicCount: 7,
   speed:         88,
 
   splitting:  true,    // cells still split on escape

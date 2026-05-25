@@ -273,6 +273,13 @@ class GameScene extends Phaser.Scene {
 
     if (!canSplit) img.setScale(0.72);
 
+    // Healthy cells track how many nearby leukemic kills they've absorbed.
+    // They die after 2 or 3 hits (randomised per cell), simulating chemo collateral damage.
+    if (!isLeukemic) {
+      img.setData('hits', 0);
+      img.setData('hitsToKill', Phaser.Math.Between(2, 3));
+    }
+
     this.tweens.add({ targets: img, alpha: 1, duration: 400 });
 
     if (isLeukemic && !willMutate) this._addPulseTween(img);
@@ -416,15 +423,30 @@ class GameScene extends Phaser.Scene {
   }
 
   _destroyLeukemicCell(img) {
-    this.particles.setPosition(img.x, img.y);
+    const cx = img.x, cy = img.y;
+
+    this.particles.setPosition(cx, cy);
     this.particles.explode(22);
 
+    // Burst ring
     const ring = this.add.graphics();
     ring.lineStyle(3, 0xff4499, 1);
-    ring.strokeCircle(img.x, img.y, 20);
+    ring.strokeCircle(cx, cy, 20);
     this.tweens.add({
       targets: ring, alpha: 0, scaleX: 2.5, scaleY: 2.5, duration: 400,
       onComplete: () => ring.destroy(),
+    });
+
+    // Collateral-damage AoE indicator — shows the blast radius to the player
+    const COLLATERAL_R = 90;
+    const aoe = this.add.graphics();
+    aoe.fillStyle(0xff6600, 0.10);
+    aoe.fillCircle(cx, cy, COLLATERAL_R);
+    aoe.lineStyle(1.5, 0xff9900, 0.45);
+    aoe.strokeCircle(cx, cy, COLLATERAL_R);
+    this.tweens.add({
+      targets: aoe, alpha: 0, scaleX: 1.12, scaleY: 1.12, duration: 550,
+      onComplete: () => aoe.destroy(),
     });
 
     this.tweens.killTweensOf(img);
@@ -434,20 +456,87 @@ class GameScene extends Phaser.Scene {
     });
 
     this._addScore(15);
-    this._floatingText(img.x, img.y, '+15', '#ff88cc');
+    this._floatingText(cx, cy, '+15', '#ff88cc');
+    this._checkCollateralDamage(cx, cy);
     this._checkWaveComplete();
   }
 
   _hitHealthyCell(img) {
     this.tweens.add({
       targets: img, tint: 0xff0000, duration: 110, yoyo: true, repeat: 2,
-      onComplete: () => { if (img.active) img.clearTint(); },
+      onComplete: () => this._restoreCellTint(img),
     });
     const flash = this.add.rectangle(W / 2, H / 2, W, H, 0xff0000, 0.18);
     this.tweens.add({ targets: flash, alpha: 0, duration: 350, onComplete: () => flash.destroy() });
     this._floatingText(img.x, img.y - 30, 'HEALTHY CELL!', '#ff4444');
     this.cameras.main.shake(120, 0.007);
     this._damageHealth(12);
+  }
+
+  // ── Collateral damage ─────────────────────────────────────────────────────
+  // Damage tint for a healthy cell based on accumulated hits.
+  _restoreCellTint(cell) {
+    if (!cell || !cell.active) return;
+    const hits      = cell.getData('hits') || 0;
+    const hitsToKill = cell.getData('hitsToKill') || 2;
+    if (hits === 0) { cell.clearTint(); return; }
+    // Shift tint from warm pink (1 hit) toward deep orange-red (near death)
+    cell.setTint(hits / hitsToKill < 0.6 ? 0xffaaaa : 0xff6677);
+  }
+
+  // Called after every leukemic kill — finds healthy cells within blast radius.
+  _checkCollateralDamage(x, y) {
+    const COLLATERAL_R = 90;
+    this.cells.forEach(cell => {
+      if (!cell.active || !cell.getData('alive') || cell.getData('leukemic')) return;
+      const dx = cell.x - x, dy = cell.y - y;
+      if (Math.sqrt(dx * dx + dy * dy) < COLLATERAL_R) {
+        this._damageHealthyCell(cell);
+      }
+    });
+  }
+
+  // Apply one collateral hit to a healthy cell.
+  _damageHealthyCell(cell) {
+    if (!cell.active || !cell.getData('alive')) return;
+    const hits      = (cell.getData('hits') || 0) + 1;
+    const hitsToKill = cell.getData('hitsToKill') || 2;
+    cell.setData('hits', hits);
+
+    if (hits >= hitsToKill) {
+      // Cell has absorbed too much collateral damage — it dies
+      cell.setData('alive', false);
+      const t = cell.getData('escapeTimer'); if (t) t.remove();
+      this._floatingText(cell.x, cell.y - 28, 'COLLATERAL!', '#ff9944');
+      this._damageHealth(4);
+      this.tweens.killTweensOf(cell);
+      this.tweens.add({
+        targets: cell, alpha: 0, scaleX: 0.35, scaleY: 0.35, duration: 480,
+        ease: 'Power2',
+        onComplete: () => { cell.destroy(); this._removeCell(cell); },
+      });
+    } else {
+      // Flash white, then settle on the damage tint
+      cell.setTint(0xffffff);
+      this.time.delayedCall(120, () => this._restoreCellTint(cell));
+      const ratio = hits / hitsToKill;
+      this._floatingText(cell.x, cell.y - 22, `⚠ ${hits}/${hitsToKill}`, '#ffbb55');
+      // Small shockwave ring on the cell
+      const shockR  = 26;
+      const shock = this.add.graphics();
+      shock.lineStyle(2, 0xff9900, 0.8);
+      shock.strokeCircle(cell.x, cell.y, shockR);
+      this.tweens.add({
+        targets: shock, alpha: 0, scaleX: 2, scaleY: 2, duration: 400,
+        onComplete: () => shock.destroy(),
+      });
+      // Wobble the cell
+      this.tweens.add({
+        targets: cell, x: cell.x + 4, duration: 60,
+        yoyo: true, repeat: 3, ease: 'Sine.easeInOut',
+        onComplete: () => { if (cell.active) cell.x = cell.x; },
+      });
+    }
   }
 
   // ── Cell escaping & splitting ──────────────────────────────────────────────
