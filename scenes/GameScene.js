@@ -129,7 +129,7 @@ class GameScene extends Phaser.Scene {
 
     // Panel dimensions
     const PW = 560;
-    const PH = cfg.newTag ? 314 : 278;
+    const PH = cfg.newTag ? 380 : 340;
     const PX = W / 2 - PW / 2;
     const PY = H / 2 - PH / 2;
     const themeHex = '#' + cfg.theme.toString(16).padStart(6, '0');
@@ -188,14 +188,15 @@ class GameScene extends Phaser.Scene {
     }).setOrigin(0.5, 0).setDepth(DEPTH + 2));
     y += desc.height + 4;
 
-    // Detail line (smaller, amber)
+    // Detail line (smaller, amber) — track its height so the button stays below it
     if (cfg.detail) {
-      track(this.add.text(W / 2, y, cfg.detail, {
+      const detailTxt = track(this.add.text(W / 2, y, cfg.detail, {
         fontSize: '12px', fontFamily: 'Segoe UI', color: '#ffcc88', align: 'center',
       }).setOrigin(0.5, 0).setDepth(DEPTH + 2));
+      y += detailTxt.height + 8;
     }
 
-    // Continue / Skip button
+    // Continue / Skip button — anchored near the panel bottom (always lower on screen)
     const btnY = PY + PH - 46;
     const btn  = track(this.add.text(W / 2, btnY, '▶  Continue', {
       fontSize: '19px', fontFamily: 'Segoe UI', color: '#ffffff',
